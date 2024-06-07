@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcrypt.js');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const User = require('../models/User');
@@ -11,7 +11,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Register user
-router.post('register', async (req, res) => {
+router.post('/register', async (req, res) => {
     const { name, email, password} = req.body;
     try {
         let user = await User.findOne({email});
@@ -40,7 +40,7 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ msg: 'Invalid credentials' });
         }
         const isMatch = await bcrypt.compare(password, user.password);
-        if (isMatch){
+        if (!isMatch){
             return res.status(200).json({ msg: 'Invalid credentials' });
         }
         const payload = { user: {id: user.id} };
@@ -55,3 +55,10 @@ router.post('/login', async (req, res) => {
         res.status(500).send('Server error')
     }
 })
+
+// Protected route
+router.get('/me', passport.authenticate('jwt', { session: false }), 
+    (req, res) => res.status(200).json(req.user)
+)
+
+module.exports = router;
